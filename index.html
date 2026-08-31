@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#08090b">
+<link rel="manifest" href="manifest.json">
+<title>Um Dia de Cada Vez</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#08090b;color:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{max-width:520px;margin:auto;min-height:100vh;padding:22px 18px 100px;background:linear-gradient(180deg,#090a0d,#101216)}
+.top{display:flex;justify-content:space-between;align-items:center}.menu{font-size:30px;color:#d9a94b}.best{font-size:13px;text-align:center;color:#aaa}.best b{display:block;font-size:25px;color:#e6b95f}
+h1{text-align:center;font-size:28px;letter-spacing:1px;margin:36px 0 4px}h1 span{color:#d9a94b}.sub{text-align:center;color:#aaa;margin-bottom:28px}
+.card{background:linear-gradient(145deg,#15171b,#0f1114);border:1px solid #202329;border-radius:24px;padding:25px 18px;margin:16px 0;box-shadow:0 12px 30px #0005}
+.streak{text-align:center}.label{color:#ddd;font-size:16px}.number{font-size:112px;line-height:1;font-weight:800;color:#e6b95f;margin:12px 0}.days{font-size:27px;font-weight:700;letter-spacing:3px}.muted{color:#999;margin-top:8px}
+.quote{text-align:center;font-size:19px;line-height:1.45}.quoteMark{font-size:38px;color:#d9a94b}
+button{width:100%;border:0;border-radius:18px;padding:20px;font-size:18px;font-weight:800;letter-spacing:.5px;background:linear-gradient(135deg,#ffe7a5,#d9a64d);color:#101010;box-shadow:0 10px 30px #d9a64d33;cursor:pointer}
+button:active{transform:scale(.98)}.updated{text-align:center;color:#999;font-size:13px;margin:14px 0 22px}
+.sectionTitle{display:flex;justify-content:space-between;font-weight:800;margin-bottom:18px}.sectionTitle span{font-weight:500;color:#999;font-size:14px}
+.journey{display:flex;gap:8px;overflow:hidden}.dot{width:39px;height:39px;border:2px solid #385244;border-radius:50%;display:grid;place-items:center;color:#62e69b;flex:none}.dot.current{border-color:#e6b95f;color:#e6b95f}.dot.future{background:#26292e;border-color:#26292e;color:#777}
+.milestones{display:flex;gap:12px;overflow-x:auto;padding-bottom:5px}.mile{min-width:68px;text-align:center}.circle{height:58px;width:58px;margin:auto;border:2px solid #666;border-radius:50%;display:grid;place-items:center;color:#e6b95f;font-weight:800}.mile small{display:block;color:#aaa;margin-top:8px}
+nav{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:auto;background:#0c0e11ee;border-top:1px solid #25282d;display:flex;justify-content:space-around;padding:12px 6px calc(12px + env(safe-area-inset-bottom));backdrop-filter:blur(12px)}
+nav div{text-align:center;color:#888;font-size:11px}nav div b{display:block;font-size:22px;margin-bottom:3px}nav .active{color:#f0c86f}
+.reset{background:none;color:#777;box-shadow:none;font-size:13px;padding:10px;margin-top:8px}
+.toast{position:fixed;left:50%;bottom:105px;transform:translateX(-50%);background:#202329;padding:12px 18px;border-radius:14px;opacity:0;pointer-events:none;transition:.25s}.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="top"><div class="menu">☰</div><div class="best">🔥<b id="best">0</b>melhor sequência</div></div>
+  <h1>UM DIA <span>DE CADA VEZ</span></h1>
+  <div class="sub">SUA JORNADA. SUA ESCOLHA. SEU CONTROLE.</div>
+
+  <section class="card streak">
+    <div class="label">VOCÊ ESTÁ HÁ</div>
+    <div class="number" id="count">0</div>
+    <div class="days">DIAS</div>
+    <div class="muted">Longe do vício</div>
+  </section>
+
+  <section class="card quote"><div class="quoteMark">“</div><div id="quote"></div></section>
+
+  <button id="add">＋ HOJE EU ESCOLHI CONTINUAR</button>
+  <div class="updated" id="updated">Ainda não registrado hoje</div>
+
+  <section class="card">
+    <div class="sectionTitle">MINHA JORNADA <span>ver tudo ›</span></div>
+    <div class="journey" id="journey"></div>
+  </section>
+
+  <section class="card">
+    <div class="sectionTitle">PRÓXIMAS CONQUISTAS</div>
+    <div class="milestones" id="milestones"></div>
+  </section>
+
+  <button class="reset" id="reset">Recomeçar contador</button>
+</main>
+
+<nav>
+  <div class="active"><b>⌂</b>Início</div>
+  <div><b>▥</b>Histórico</div>
+  <div><b>❝</b>Frases</div>
+  <div><b>◎</b>Metas</div>
+  <div><b>●</b>Perfil</div>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+const quotes=[
+"Você não precisa vencer para sempre. Só precisa vencer hoje.",
+"A vontade passa. A decisão fica.",
+"Não volte para aquilo que você decidiu deixar para trás.",
+"Mais um dia. Mais controle. Mais liberdade.",
+"Você está construindo uma versão de si que não depende desse hábito.",
+"Hoje não precisa ser perfeito. Precisa ser escolhido.",
+"Cada dia longe do vício é um voto na pessoa que você quer ser."
+];
+let data=JSON.parse(localStorage.getItem("udc_data")||'{"count":0,"best":0,"last":null}');
+const $=id=>document.getElementById(id);
+function save(){localStorage.setItem("udc_data",JSON.stringify(data))}
+function render(){
+ $("count").textContent=data.count;$("best").textContent=data.best;
+ $("quote").textContent=quotes[data.count%quotes.length];
+ $("updated").textContent=data.last?"Última atualização: "+new Date(data.last).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}):"Ainda não registrado hoje";
+ let j="";for(let i=1;i<=10;i++)j+=`<div class="dot ${i<=data.count?"":"future"} ${i===data.count?"current":""}">${i<=data.count?"✓":i}</div>`;
+ $("journey").innerHTML=j;
+ const ms=[7,14,30,60,90,180,365];$("milestones").innerHTML=ms.map(x=>`<div class="mile"><div class="circle" style="${data.count>=x?'border-color:#58d894':''}">${x}</div><small>${x===30?"1 mês":x===60?"2 meses":x===90?"3 meses":x===180?"6 meses":x===365?"1 ano":x+" dias"}</small></div>`).join("");
+}
+$("add").onclick=()=>{
+ const today=new Date().toDateString(), last=data.last?new Date(data.last).toDateString():null;
+ if(last===today){toast("Você já registrou hoje. Amanhã continuamos.");return}
+ data.count++;data.best=Math.max(data.best,data.count);data.last=new Date().toISOString();save();render();
+ toast(data.count%7===0?"🔥 Mais uma semana conquistada!":"✓ Hoje você escolheu continuar.");
+};
+$("reset").onclick=()=>{if(confirm("Recomeçar o contador? Sua melhor sequência será preservada.")){data.count=0;data.last=null;save();render();}};
+function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2200)}
+render();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./service-worker.js').catch(()=>{});}
+</script>
+</body>
+</html>
